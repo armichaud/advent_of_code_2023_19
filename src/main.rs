@@ -96,7 +96,6 @@ fn parse_input(filename: &str) -> (Vec<Workflow>, Vec<Part>) {
         line = lines.next().unwrap().unwrap();
     }
     let mut parts = Vec::new();
-    lines.next().unwrap().unwrap();
     while let Some(Ok(line)) = lines.next() {
         parts.push(get_part(line));
     }
@@ -138,7 +137,6 @@ fn solution(filename: &str) -> usize {
             }
             workflow = workflows.iter().find(|x| x.id == workflow.default).unwrap();
         }
-
     }
     sum
 }
