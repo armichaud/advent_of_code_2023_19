@@ -97,7 +97,7 @@ fn parse_input(filename: &str) -> (Vec<Workflow>, Vec<Part>) {
         line = lines.next().unwrap().unwrap();
     }
     let mut parts = Vec::new();
-    line = lines.next().unwrap().unwrap();
+    lines.next().unwrap().unwrap();
     while let Some(Ok(line)) = lines.next() {
         parts.push(get_part(line));
     }
@@ -105,8 +105,43 @@ fn parse_input(filename: &str) -> (Vec<Workflow>, Vec<Part>) {
 }
 
 fn solution(filename: &str) -> usize {
-    let (workflows, parts) = parse_input(filename); 
-    0
+    let (workflows, parts) = parse_input(filename);
+    let mut sum = 0;
+    for part in parts {
+        let mut workflow = workflows.iter().find(|x| x.id == "in").unwrap();
+        'outer: loop {
+            for rule in &workflow.rules {
+                let value = match rule.category {
+                    'x' => part.x,
+                    'm' => part.m,
+                    'a' => part.a,
+                    's' => part.s,
+                    _ => panic!("Invalid category"),
+                };
+                if value.cmp(&rule.value) == rule.comparison {
+                    if rule.destination == ACCEPTED.to_string() {
+                        sum += part.x + part.m + part.a + part.s;
+                        break 'outer;
+                    }
+                    if rule.destination == REJECTED.to_string() {
+                        break 'outer;
+                    }
+                    workflow = workflows.iter().find(|x| x.id == rule.destination).unwrap();
+                    break;
+                }
+            }
+            if workflow.default == ACCEPTED.to_string() {
+                sum += part.x + part.m + part.a + part.s;
+                break;
+            }
+            if workflow.default == REJECTED.to_string() {
+                break;
+            }
+            workflow = workflows.iter().find(|x| x.id == workflow.default).unwrap();
+        }
+
+    }
+    sum
 }
 
 fn main() {
