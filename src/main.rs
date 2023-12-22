@@ -44,7 +44,6 @@ fn get_workflow(line: String) -> Workflow {
         let comparison = match chars.next().unwrap() {
             '<' => Ordering::Less,
             '>' => Ordering::Greater,
-            '=' => Ordering::Equal,
             _ => panic!("Invalid comparison operator"),
         };
         let value = chars.take_while(|x| x.is_numeric()).collect::<String>().parse::<usize>().unwrap();
