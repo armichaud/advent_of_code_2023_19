@@ -125,7 +125,7 @@ fn solution(filename: &str) -> usize {
                         break 'outer;
                     }
                     workflow = workflows.iter().find(|x| x.id == rule.destination).unwrap();
-                    break;
+                    continue 'outer;
                 }
             }
             if workflow.default == ACCEPTED.to_string() {
@@ -143,5 +143,5 @@ fn solution(filename: &str) -> usize {
 
 fn main() {
     assert_eq!(solution("example.txt"), 19114);
-    assert_eq!(solution("input.txt"), 0);
+    assert_eq!(solution("input.txt"), 432427);
 }
