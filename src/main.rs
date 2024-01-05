@@ -1,147 +1,204 @@
-use std::{fs::File, io::{BufReader, BufRead}};
-use std::cmp::Ordering;
+mod solution_1;
+use solution_1::*;
 
-const ACCEPTED: char = 'A';
-const REJECTED: char = 'R';
-
-#[derive(Debug)]
-struct Rule {
-    category: char,
-    comparison: Ordering,
-    value: usize,
-    destination: String,
+#[derive(Debug, Clone, Copy)]
+struct RatingRange {
+    min: usize,
+    max: usize,
 }
 
-#[derive(Debug)]
-struct Workflow {
-    id: String,
-    rules: Vec<Rule>,
-    default: String,
-}
-
-#[derive(Debug)]
-struct Part {
-    x: usize,
-    m: usize,
-    a: usize,
-    s: usize,
-}
-
-fn get_workflow(line: String) -> Workflow {
-    let mut parts = line.split("{");
-    
-    let id = parts.next().unwrap().to_string();
-    let mut rule_list = parts.next().unwrap().to_string();
-    rule_list.pop().unwrap(); // remove trailing '}'
-    let mut rule_strings = rule_list.split(",").collect::<Vec<&str>>();
-    let default = rule_strings.pop().unwrap().to_string();
-    let mut rules = Vec::new();
-    for rule in rule_strings.iter() {
-        let mut split = rule.split(":");
-        let mut chars = split.next().unwrap().chars();
-        let destination = split.next().unwrap().to_string();
-        let category = chars.next().unwrap();
-        let comparison = match chars.next().unwrap() {
-            '<' => Ordering::Less,
-            '>' => Ordering::Greater,
-            _ => panic!("Invalid comparison operator"),
-        };
-        let value = chars.take_while(|x| x.is_numeric()).collect::<String>().parse::<usize>().unwrap();
-        rules.push(Rule { category, comparison, value, destination });
+impl RatingRange {
+    fn get_range_size(&self) -> usize {
+        self.max - self.min + 1
     }
-    Workflow {
-        id,
-        rules,
-        default,
-    }
-
 }
 
-fn get_part(line: String) -> Part {
-    let mut line = line.replace("{", "");
-    line = line.replace("}", "");
-    let mut x = 0;
-    let mut m = 0;
-    let mut a = 0;
-    let mut s = 0;
-    for rating in line.split(",").into_iter() {
-        let mut chars = rating.chars();
-        let category = chars.next().unwrap();
-        chars.next().unwrap();
-        let value = chars.as_str().parse::<usize>().unwrap();
-        match category {
-            'x' => x = value,
-            'm' => m = value,
-            'a' => a = value,
-            's' => s = value,
-            _ => panic!("Invalid category"),
+
+#[derive(Debug)]
+struct RangePart {
+    x: RatingRange,
+    m: RatingRange,
+    a: RatingRange,
+    s: RatingRange,
+}
+
+fn solution_2(file: &str) -> usize {
+    let (workflows, _) = parse_input(file);
+    //println!("workflows: {:?}", workflows);
+    let mut stack = Vec::from([(
+        RangePart {
+            x: RatingRange { min: 1, max: 4000 },
+            m: RatingRange { min: 1, max: 4000 },
+            a: RatingRange { min: 1, max: 4000 },
+            s: RatingRange { min: 1, max: 4000 },
+        },
+        "in",
+    )]);
+    let mut accepted: Vec<RangePart> = Vec::new();
+    'outer: while stack.len() > 0 {
+        let (mut part, workflow_id) = stack.pop().unwrap();
+        if workflow_id == ACCEPTED.to_string() {
+            accepted.push(part);
+            continue;
         }
-    }
-    Part {
-        x,
-        m,
-        a,
-        s,
-    }
-}
-
-fn parse_input(filename: &str) -> (Vec<Workflow>, Vec<Part>) {
-    let file = File::open(filename).unwrap();
-    let reader = BufReader::new(file);
-    let mut lines = reader.lines();
-    let mut line = lines.next().unwrap().unwrap();
-    let mut workflows = Vec::new();
-    while line != "" {
-        workflows.push(get_workflow(line));
-        line = lines.next().unwrap().unwrap();
-    }
-    let mut parts = Vec::new();
-    while let Some(Ok(line)) = lines.next() {
-        parts.push(get_part(line));
-    }
-    (workflows, parts)
-}
-
-fn solution(filename: &str) -> usize {
-    let (workflows, parts) = parse_input(filename);
-    let mut sum = 0;
-    for part in parts {
-        let mut workflow = workflows.iter().find(|x| x.id == "in").unwrap();
-        'outer: loop {
-            for rule in &workflow.rules {
-                let value = match rule.category {
-                    'x' => part.x,
-                    'm' => part.m,
-                    'a' => part.a,
-                    's' => part.s,
-                    _ => panic!("Invalid category"),
-                };
-                if value.cmp(&rule.value) == rule.comparison {
-                    if rule.destination == ACCEPTED.to_string() {
-                        sum += part.x + part.m + part.a + part.s;
-                        break 'outer;
+        if workflow_id == REJECTED.to_string() {
+            continue;
+        }
+        //println!("id: {}", workflow_id);
+        let workflow = workflows.iter().find(|worflow| worflow.id == workflow_id).unwrap();
+        for rule in &workflow.rules {
+            match rule.category {
+                'x' => {
+                    let min = part.x.min;
+                    let max = part.x.max;
+                    if (rule.comparison == std::cmp::Ordering::Greater && min > rule.value) || (rule.comparison == std::cmp::Ordering::Less && max < rule.value) {
+                        stack.push((part, rule.destination.as_ref()));
+                        continue 'outer;
                     }
-                    if rule.destination == REJECTED.to_string() {
-                        break 'outer;
+                    if rule.comparison == std::cmp::Ordering::Greater && max > rule.value {
+                        stack.push((
+                            RangePart {
+                                x: RatingRange { min: rule.value + 1, max },
+                                m: part.m,
+                                a: part.a,
+                                s: part.s,
+                            }, 
+                            rule.destination.as_ref()
+                        ));
+                        part.x.max = rule.value;
                     }
-                    workflow = workflows.iter().find(|x| x.id == rule.destination).unwrap();
-                    continue 'outer;
+                    if rule.comparison == std::cmp::Ordering::Less && min < rule.value {
+                        stack.push((
+                            RangePart {
+                                x: RatingRange { min, max: rule.value -1 },
+                                m: part.m,
+                                a: part.a,
+                                s: part.s,
+                            }, 
+                            rule.destination.as_ref()
+                        ));
+                        part.x.min = rule.value;
+                    }
                 }
-            }
-            if workflow.default == ACCEPTED.to_string() {
-                sum += part.x + part.m + part.a + part.s;
-                break;
-            }
-            if workflow.default == REJECTED.to_string() {
-                break;
-            }
-            workflow = workflows.iter().find(|x| x.id == workflow.default).unwrap();
+                'm' => {
+                    let min = part.m.min;
+                    let max = part.m.max;
+                    if (rule.comparison == std::cmp::Ordering::Greater && min > rule.value) || (rule.comparison == std::cmp::Ordering::Less && max < rule.value) {
+                        stack.push((part, rule.destination.as_ref()));
+                        continue 'outer;
+                    }
+                    if rule.comparison == std::cmp::Ordering::Greater && max > rule.value {
+                        stack.push((
+                            RangePart {
+                                x: part.x,
+                                m: RatingRange { min: rule.value + 1, max },
+                                a: part.a,
+                                s: part.s,
+                            }, 
+                            rule.destination.as_ref()
+                        ));
+                        part.m.max = rule.value;
+                    }
+                    if rule.comparison == std::cmp::Ordering::Less && min < rule.value {
+                        stack.push((
+                            RangePart {
+                                x: part.x,
+                                m: RatingRange { min, max: rule.value - 1 },
+                                a: part.a,
+                                s: part.s,
+                            }, 
+                            rule.destination.as_ref()
+                        ));
+                        part.m.min = rule.value;
+
+                    }
+                }
+                'a' => {
+                    let min = part.a.min;
+                    let max = part.a.max;
+                    if (rule.comparison == std::cmp::Ordering::Greater && min > rule.value) || (rule.comparison == std::cmp::Ordering::Less && max < rule.value) {
+                        stack.push((part, rule.destination.as_ref()));
+                        continue 'outer;
+                    }
+                    if rule.comparison == std::cmp::Ordering::Greater && max > rule.value {
+                        stack.push((
+                            RangePart {
+                                x: part.a,
+                                m: part.m,
+                                a: RatingRange { min: rule.value + 1, max },
+                                s: part.s,
+                            }, 
+                            rule.destination.as_ref()
+                        ));
+                        part.a.max = rule.value;
+                    }
+                    if rule.comparison == std::cmp::Ordering::Less && min < rule.value {
+                        stack.push((
+                            RangePart {
+                                x: part.x,
+                                m: part.m,
+                                a: RatingRange { min, max: rule.value - 1 },
+                                s: part.s,
+                            }, 
+                            rule.destination.as_ref()
+                        ));
+                        part.a.min = rule.value;
+                    }
+                }
+                's' => {
+                    let min = part.s.min;
+                    let max = part.s.max;
+                    if (rule.comparison == std::cmp::Ordering::Greater && min > rule.value) || (rule.comparison == std::cmp::Ordering::Less && max < rule.value) {
+                        stack.push((part, rule.destination.as_ref()));
+                        continue 'outer;
+                    }
+                    if rule.comparison == std::cmp::Ordering::Greater && max > rule.value {
+                        stack.push((
+                            RangePart {
+                                x: part.x,
+                                m: part.m,
+                                a: part.a,
+                                s: RatingRange { min: rule.value + 1, max },
+                            }, 
+                            rule.destination.as_ref()
+                        ));
+                        part.s.max = rule.value;
+                    }
+                    if rule.comparison == std::cmp::Ordering::Less && min < rule.value {
+                        stack.push((
+                            RangePart {
+                                x: part.x,
+                                m: part.m,
+                                a: part.a,
+                                s: RatingRange { min, max: rule.value - 1 },
+                            }, 
+                            rule.destination.as_ref()
+                        ));
+                        part.s.min = rule.value;
+                    }
+                }
+                _ => panic!("Invalid category"),
+            };
         }
+        if workflow.default == ACCEPTED.to_string() {
+            accepted.push(part);
+            continue;
+        }
+        if workflow.default == REJECTED.to_string() {
+            continue;
+        }
+        stack.push((part, workflow.default.as_ref()));
     }
-    sum
+    accepted.iter().fold(0, |a, part| a + (part.x.get_range_size() * part.m.get_range_size() * part.a.get_range_size() * part.s.get_range_size()))
 }
+
+   
+
+
 
 fn main() {
-    assert_eq!(solution("example.txt"), 19114);
-    assert_eq!(solution("input.txt"), 432427);
+    assert_eq!(solution_1("example.txt"), 19114);
+    assert_eq!(solution_1("input.txt"), 432427);
+    assert_eq!(solution_2("example.txt"), 167409079868000);
+    assert_eq!(solution_2("input.txt"), 0);
 }
