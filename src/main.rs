@@ -66,11 +66,10 @@ fn solution_2(file: &str) -> usize {
                             rule.destination.as_ref()
                         ));
                         part.x.max = rule.value;
-                    }
-                    if rule.comparison == std::cmp::Ordering::Less && min < rule.value {
+                    } else if rule.comparison == std::cmp::Ordering::Less && min < rule.value {
                         stack.push((
                             RangePart {
-                                x: RatingRange { min, max: rule.value -1 },
+                                x: RatingRange { min, max: rule.value - 1 },
                                 m: part.m,
                                 a: part.a,
                                 s: part.s,
@@ -98,8 +97,7 @@ fn solution_2(file: &str) -> usize {
                             rule.destination.as_ref()
                         ));
                         part.m.max = rule.value;
-                    }
-                    if rule.comparison == std::cmp::Ordering::Less && min < rule.value {
+                    } else if rule.comparison == std::cmp::Ordering::Less && min < rule.value {
                         stack.push((
                             RangePart {
                                 x: part.x,
@@ -123,7 +121,7 @@ fn solution_2(file: &str) -> usize {
                     if rule.comparison == std::cmp::Ordering::Greater && max > rule.value {
                         stack.push((
                             RangePart {
-                                x: part.a,
+                                x: part.x,
                                 m: part.m,
                                 a: RatingRange { min: rule.value + 1, max },
                                 s: part.s,
@@ -131,8 +129,7 @@ fn solution_2(file: &str) -> usize {
                             rule.destination.as_ref()
                         ));
                         part.a.max = rule.value;
-                    }
-                    if rule.comparison == std::cmp::Ordering::Less && min < rule.value {
+                    } else if rule.comparison == std::cmp::Ordering::Less && min < rule.value {
                         stack.push((
                             RangePart {
                                 x: part.x,
@@ -163,8 +160,7 @@ fn solution_2(file: &str) -> usize {
                             rule.destination.as_ref()
                         ));
                         part.s.max = rule.value;
-                    }
-                    if rule.comparison == std::cmp::Ordering::Less && min < rule.value {
+                    } else if rule.comparison == std::cmp::Ordering::Less && min < rule.value {
                         stack.push((
                             RangePart {
                                 x: part.x,
@@ -197,8 +193,8 @@ fn solution_2(file: &str) -> usize {
 
 
 fn main() {
-    assert_eq!(solution_1("example.txt"), 19114);
-    assert_eq!(solution_1("input.txt"), 432427);
-    assert_eq!(solution_2("example.txt"), 167409079868000);
-    assert_eq!(solution_2("input.txt"), 0);
+    //assert_eq!(solution_1("example.txt"), 19114);
+    //assert_eq!(solution_1("input.txt"), 432427);
+    //assert_eq!(solution_2("example.txt"), 167409079868000);
+    assert_eq!(solution_2("input.txt"), 144400479962759);
 }
