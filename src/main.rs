@@ -193,8 +193,8 @@ fn solution_2(file: &str) -> usize {
 
 
 fn main() {
-    //assert_eq!(solution_1("example.txt"), 19114);
-    //assert_eq!(solution_1("input.txt"), 432427);
-    //assert_eq!(solution_2("example.txt"), 167409079868000);
-    assert_eq!(solution_2("input.txt"), 144400479962759);
+    assert_eq!(solution_1("example.txt"), 19114);
+    assert_eq!(solution_1("input.txt"), 432427);
+    assert_eq!(solution_2("example.txt"), 167409079868000);
+    assert_eq!(solution_2("input.txt"), 143760172569135);
 }
